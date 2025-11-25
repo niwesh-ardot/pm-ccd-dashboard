@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PM - CCD Dashboard</title>
+
+  <!-- Link CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fa-solid fa-box"></i>
+        <span>PM - CCD</span>
+      </div>
+
+      <nav class="menu">
+        <a href="#" class="menu-link active" data-section="roadway">
+          <i class="fa-solid fa-file-lines"></i>Roadway Files Received
+        </a>
+        <a href="#" class="menu-link" data-section="inst-out">
+          <i class="fa-solid fa-map"></i>In-state Vs Out-State
+        </a>
+        <a href="#" class="menu-link" data-section="reports">
+          <i class="fa-solid fa-file-lines"></i>Reports
+        </a>
+        <a href="#" class="menu-link" data-section="settings">
+          <i class="fa-solid fa-gear"></i>Settings
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Search..." />
+        </div>
+        <div class="topbar-right">
+          <i class="fa-regular fa-bell"></i>
+          <i class="fa-regular fa-envelope"></i>
+          <i class="fa-regular fa-user"></i>
+        </div>
+      </header>
+
+      <section class="content">
+        <h1 class="page-title">Construction Contracts Development</h1>
+
+        <!-- ROADWAY FILES RECEIVED SECTION -->
+        <div id="section-roadway" class="page-section active">
+          <!-- Stat cards (high level) -->
+          <div class="cards">
+            <div class="card blue">
+              <p class="card-title">Roadway Files Received (all years)</p>
+              <p class="card-value" id="cardTotalRoadway">–</p>
+              <i class="fa-solid fa-file-arrow-down card-icon"></i>
+            </div>
+
+            <div class="card yellow">
+              <p class="card-title">Average % Before Due Date</p>
+              <p class="card-value" id="cardAvgOnTime">–</p>
+              <i class="fa-solid fa-clock card-icon"></i>
+            </div>
+
+            <div class="card green">
+              <p class="card-title">Best Year (On Time)</p>
+              <p class="card-value" id="cardBestYear">–</p>
+              <i class="fa-solid fa-trophy card-icon"></i>
+            </div>
+
+            <div class="card red">
+              <p class="card-title">Worst Year (Late)</p>
+              <p class="card-value" id="cardWorstYear">–</p>
+              <i class="fa-solid fa-triangle-exclamation card-icon"></i>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters-row">
+            <div class="filter">
+              <label for="yearSelect">Year</label>
+              <select id="yearSelect"></select>
+            </div>
+            <div class="filter">
+              <label for="monthSelect">Month</label>
+              <select id="monthSelect"></select>
+            </div>
+            <div class="filter">
+              <label for="compareYearSelect">Compare year</label>
+              <select id="compareYearSelect"></select>
+            </div>
+          </div>
+
+          <!-- Selected month summary -->
+          <div class="selection-summary">
+            <div class="summary-card">
+              <p class="summary-title">% on time (received before due date)</p>
+              <p id="summaryOnTime" class="summary-value">–</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">% late (after due date + after advertisement)</p>
+              <p id="summaryLate" class="summary-value">–</p>
+              <p id="summaryInsight" class="summary-insight"></p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">Total files received</p>
+              <p id="summaryTotal" class="summary-value">–</p>
+            </div>
+          </div>
+
+          <!-- Charts row: interactive per-month and year-vs-year -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <h2>How early or late were plans? (selected month)</h2>
+              <canvas id="roadwayBarChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h2>% received before due date (year vs year)</h2>
+              <canvas id="roadwayLineChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Charts row: total projects + yearly percentages -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <h2>Total Projects Received from Roadway by Year</h2>
+              <canvas id="chartTotalProjectsByYear"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h2>Files Received from Roadway by Year (percentages)</h2>
+              <canvas id="chartFilesByYearPct"></canvas>
+            </div>
+          </div>
+
+          <!-- Charts row: selected-year focus charts -->
+          <div class="charts-row">
+            <div class="chart-card">
+                <h2>Files Received from Roadway – <span id="detailYearLabel1"></span> (percentages)</h2>
+                <canvas id="chartFiles2025"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h2>Plan Receipt Timeline – <span id="detailYearLabel2"></span></h2>
+                <canvas id="chartPlanTimeline2025"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- IN-STATE VS OUT-STATE SECTION -->
+        <div id="section-inst-out" class="page-section">
+          <!-- High-level cards for selected year -->
+          <div class="cards">
+            <div class="card blue">
+              <p class="card-title">Total contracts (selected year)</p>
+              <p class="card-value" id="instCardTotalContracts">–</p>
+              <i class="fa-solid fa-folder-open card-icon"></i>
+            </div>
+            <div class="card green">
+              <p class="card-title">In-state share (amount)</p>
+              <p class="card-value" id="instCardInShareAmount">–</p>
+              <i class="fa-solid fa-city card-icon"></i>
+            </div>
+            <div class="card yellow">
+              <p class="card-title">Savings from competition</p>
+              <p class="card-value" id="instCardSavings">–</p>
+              <i class="fa-solid fa-piggy-bank card-icon"></i>
+            </div>
+          </div>
+
+          <!-- Filter -->
+          <div class="filters-row">
+            <div class="filter">
+              <label for="instYearSelect">Year</label>
+              <select id="instYearSelect"></select>
+            </div>
+          </div>
+
+          <!-- Summary insight for selected year -->
+          <div class="selection-summary">
+            <div class="summary-card">
+              <p class="summary-title">In-state share (contracts)</p>
+              <p class="summary-value" id="instCardInShareCount">–</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">Contracts with at least one in-state bidder</p>
+              <p class="summary-value" id="instCardWithInCount">–</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">Insight</p>
+              <p class="summary-value" id="instSummaryHeadline">–</p>
+              <p class="summary-insight" id="instSummaryInsight"></p>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <h2>Amount awarded – In-state vs Out-of-state (by year)</h2>
+              <canvas id="instOutBarChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h2>In-state share over time (% of amount and % of contracts)</h2>
+              <canvas id="instOutLineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- REPORTS SECTION -->
+        <div id="section-reports" class="page-section">
+          <div class="chart-card">
+            <h2>Reports</h2>
+            <p>Report downloads and summary will appear here later.</p>
+          </div>
+        </div>
+
+        <!-- SETTINGS SECTION -->
+        <div id="section-settings" class="page-section">
+          <div class="chart-card">
+            <h2>Settings</h2>
+            <p>Dashboard preferences and user settings will appear here later.</p>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- JS -->
+  <script src="js/script.js"></script>
+</body>
+</html>
