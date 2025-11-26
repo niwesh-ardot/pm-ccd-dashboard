@@ -30,7 +30,7 @@
         <a href="#" class="menu-link active" data-section="roadway">
           <i class="fa-solid fa-file-lines"></i>Roadway Files Received
         </a>
-          <a href="#" class="menu-link" data-section="addendum">
+        <a href="#" class="menu-link" data-section="addendum">
           <i class="fa-solid fa-file-circle-plus"></i>Addendum Data
         </a>
         <a href="#" class="menu-link" data-section="inst-out">
@@ -154,13 +154,13 @@
           <!-- Charts row: selected-year focus charts -->
           <div class="charts-row">
             <div class="chart-card">
-                <h2>Files Received from Roadway – <span id="detailYearLabel1"></span> (percentages)</h2>
-                <canvas id="chartFiles2025"></canvas>
+              <h2>Files Received from Roadway – <span id="detailYearLabel1"></span> (percentages)</h2>
+              <canvas id="chartFiles2025"></canvas>
             </div>
 
             <div class="chart-card">
-                <h2>Plan Receipt Timeline – <span id="detailYearLabel2"></span></h2>
-                <canvas id="chartPlanTimeline2025"></canvas>
+              <h2>Plan Receipt Timeline – <span id="detailYearLabel2"></span></h2>
+              <canvas id="chartPlanTimeline2025"></canvas>
             </div>
           </div>
         </div>
@@ -237,6 +237,19 @@
             <div class="chart-card">
               <h2>Letting Week % – year vs year comparison</h2>
               <canvas id="addCompareChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Extra timeline charts for addendum data -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <h2>Roadway Addendum Timeline – <span id="addTimelineYearLabel"></span></h2>
+              <canvas id="addTimeline2025Chart"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h2>Roadway Addendum Timeline – 2021–2025</h2>
+              <canvas id="addTimelineAllYearsChart"></canvas>
             </div>
           </div>
         </div>

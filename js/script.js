@@ -21,8 +21,10 @@ let instOutLineChart = null;
 
 // Addendum data and charts
 let addendumData = [];
-let addMonthChart = null;            // distribution for selected month
-let addCompareChart = null;          // Letting Week % year vs year
+let addMonthChart = null;             // distribution for selected month
+let addCompareChart = null;           // Letting Week % year vs year
+let addTimeline2025Chart = null;      // Roadway Addendum Timeline – selected year
+let addTimelineAllYearsChart = null;  // Roadway Addendum Timeline – 2021–2025
 
 /* ---------- CSV helper: split one line while respecting quotes ---------- */
 function splitCSVLine(line) {
@@ -1072,10 +1074,12 @@ function setupAddendumDashboard() {
   updateAddendumGlobalCards();
   updateAddendumView();
   updateAddendumCompareChart();
-  
+  buildAddendumTimelineCharts(Number(addYearSelect.value));  // build initial timelines
+
   addYearSelect.addEventListener("change", () => {
     updateAddendumView();
     updateAddendumCompareChart();
+    buildAddendumTimelineCharts(Number(addYearSelect.value));  // update timelines when year changes
   });
 
   addMonthSelect.addEventListener("change", () => {
@@ -1340,4 +1344,133 @@ function updateAddendumCompareChart() {
       }
     }
   });
+}
+
+/* ========== ADDENDUM TIMELINE CHARTS (SELECTED YEAR + 2021–2025) ========== */
+
+function buildAddendumTimelineCharts(selectedYear) {
+  if (!addendumData.length) return;
+
+  const ctxSelected = document.getElementById("addTimeline2025Chart");
+  const ctxAllYears = document.getElementById("addTimelineAllYearsChart");
+
+  // ---------- SELECTED YEAR ONLY (monthly stacked %) ----------
+  if (ctxSelected) {
+    const labelYear = document.getElementById("addTimelineYearLabel");
+    if (labelYear) labelYear.textContent = selectedYear;
+
+    const dataYear = addendumData
+      .filter(d => d.year === selectedYear)
+      .sort((a, b) => MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month));
+
+    const labels = dataYear.map(d => d.month);
+    const advPct     = dataYear.map(d => d.advertisementPct    || 0);
+    const wk3Pct     = dataYear.map(d => d.threeWeeksBeforePct || 0);
+    const wk2Pct     = dataYear.map(d => d.twoWeeksBeforePct   || 0);
+    const wk1Pct     = dataYear.map(d => d.oneWeekBeforePct    || 0);
+    const lettingPct = dataYear.map(d => d.lettingWeekPct      || 0);
+
+    if (addTimeline2025Chart) {
+      addTimeline2025Chart.data.labels = labels;
+      addTimeline2025Chart.data.datasets[0].data = advPct;
+      addTimeline2025Chart.data.datasets[1].data = wk3Pct;
+      addTimeline2025Chart.data.datasets[2].data = wk2Pct;
+      addTimeline2025Chart.data.datasets[3].data = wk1Pct;
+      addTimeline2025Chart.data.datasets[4].data = lettingPct;
+      addTimeline2025Chart.update();
+    } else {
+      addTimeline2025Chart = new Chart(ctxSelected, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "Advertisement",  data: advPct,     borderWidth: 1, stack: "year" },
+            { label: "3 Weeks Before", data: wk3Pct,     borderWidth: 1, stack: "year" },
+            { label: "2 Weeks Before", data: wk2Pct,     borderWidth: 1, stack: "year" },
+            { label: "1 Week Before",  data: wk1Pct,     borderWidth: 1, stack: "year" },
+            { label: "Letting Week",   data: lettingPct, borderWidth: 1, stack: "year" }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { position: "bottom" }
+          },
+          scales: {
+            x: { stacked: true },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: "Percent of addenda" }
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // ---------- 2021–2025 STACKED TIMELINE (all months, all years) ----------
+  if (ctxAllYears) {
+    const sorted = [...addendumData].sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      return MONTHS.indexOf(a.month) - MONTHS.indexOf(b.month);
+    });
+
+    const labelsAll = sorted.map(d => `${d.month} ${d.year}`);
+    const advPctAll     = sorted.map(d => d.advertisementPct    || 0);
+    const wk3PctAll     = sorted.map(d => d.threeWeeksBeforePct || 0);
+    const wk2PctAll     = sorted.map(d => d.twoWeeksBeforePct   || 0);
+    const wk1PctAll     = sorted.map(d => d.oneWeekBeforePct    || 0);
+    const lettingPctAll = sorted.map(d => d.lettingWeekPct      || 0);
+
+    if (addTimelineAllYearsChart) {
+      addTimelineAllYearsChart.data.labels = labelsAll;
+      addTimelineAllYearsChart.data.datasets[0].data = advPctAll;
+      addTimelineAllYearsChart.data.datasets[1].data = wk3PctAll;
+      addTimelineAllYearsChart.data.datasets[2].data = wk2PctAll;
+      addTimelineAllYearsChart.data.datasets[3].data = wk1PctAll;
+      addTimelineAllYearsChart.data.datasets[4].data = lettingPctAll;
+      addTimelineAllYearsChart.update();
+    } else {
+      addTimelineAllYearsChart = new Chart(ctxAllYears, {
+        type: "bar",
+        data: {
+          labels: labelsAll,
+          datasets: [
+            { label: "Advertisement",  data: advPctAll,     borderWidth: 1, stack: "all" },
+            { label: "3 Weeks Before", data: wk3PctAll,     borderWidth: 1, stack: "all" },
+            { label: "2 Weeks Before", data: wk2PctAll,     borderWidth: 1, stack: "all" },
+            { label: "1 Week Before",  data: wk1PctAll,     borderWidth: 1, stack: "all" },
+            { label: "Letting Week",   data: lettingPctAll, borderWidth: 1, stack: "all" }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { position: "bottom" }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 12,
+                maxRotation: 0,
+                minRotation: 0
+              }
+            },
+            y: {
+              stacked: true,
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: "Percent of addenda" }
+            }
+          }
+        }
+      });
+    }
+  }
 }
