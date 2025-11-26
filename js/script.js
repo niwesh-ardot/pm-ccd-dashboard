@@ -1089,8 +1089,8 @@ function setupAddendumDashboard() {
 function updateAddendumGlobalCards() {
   const cardTotalAddenda = document.getElementById("addCardTotalAddenda");
   const cardAvgEarlyPct = document.getElementById("addCardAvgEarlyPct");
-  const cardBestYear = document.getElementById("addCardBestYear");
-  const cardWorstYear = document.getElementById("addCardWorstYear");
+  // const cardBestYear = document.getElementById("addCardBestYear");
+  // const cardWorstYear = document.getElementById("addCardWorstYear");
 
   const totalAddenda = addendumData.reduce((sum, d) => sum + (d.total || 0), 0);
 
