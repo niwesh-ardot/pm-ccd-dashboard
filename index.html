@@ -30,6 +30,9 @@
         <a href="#" class="menu-link active" data-section="roadway">
           <i class="fa-solid fa-file-lines"></i>Roadway Files Received
         </a>
+          <a href="#" class="menu-link" data-section="addendum">
+          <i class="fa-solid fa-file-circle-plus"></i>Addendum Data
+        </a>
         <a href="#" class="menu-link" data-section="inst-out">
           <i class="fa-solid fa-map"></i>In-state Vs Out-State
         </a>
@@ -161,7 +164,83 @@
             </div>
           </div>
         </div>
+        
+        <!-- ADDENDUM DATA SECTION -->
+        <div id="section-addendum" class="page-section">
+          <!-- High-level cards -->
+          <div class="cards">
+            <div class="card blue">
+              <p class="card-title">Total Addenda (all years)</p>
+              <p class="card-value" id="addCardTotalAddenda">–</p>
+              <i class="fa-solid fa-file-circle-plus card-icon"></i>
+            </div>
 
+            <div class="card green">
+              <p class="card-title">Avg % issued before 1 Week Before</p>
+              <p class="card-value" id="addCardAvgEarlyPct">–</p>
+              <i class="fa-solid fa-forward-fast card-icon"></i>
+            </div>
+
+            <div class="card yellow">
+              <p class="card-title">Best Year (earliest addenda)</p>
+              <p class="card-value" id="addCardBestYear">–</p>
+              <i class="fa-solid fa-trophy card-icon"></i>
+            </div>
+
+            <div class="card red">
+              <p class="card-title">Worst Year (most last-minute)</p>
+              <p class="card-value" id="addCardWorstYear">–</p>
+              <i class="fa-solid fa-triangle-exclamation card-icon"></i>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="filters-row">
+            <div class="filter">
+              <label for="addYearSelect">Year</label>
+              <select id="addYearSelect"></select>
+            </div>
+            <div class="filter">
+              <label for="addMonthSelect">Month</label>
+              <select id="addMonthSelect"></select>
+            </div>
+            <div class="filter">
+              <label for="addCompareYearSelect">Compare year</label>
+              <select id="addCompareYearSelect"></select>
+            </div>
+          </div>
+
+          <!-- Selected month summary -->
+          <div class="selection-summary">
+            <div class="summary-card">
+              <p class="summary-title">Total addenda (selected month)</p>
+              <p class="summary-value" id="addSummaryTotal">–</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">% issued before 1 Week Before</p>
+              <p class="summary-value" id="addSummaryEarlyPct">–</p>
+            </div>
+            <div class="summary-card">
+              <p class="summary-title">% issued in final week (1 Week Before + Letting Week)</p>
+              <p class="summary-value" id="addSummaryLatePct">–</p>
+              <p class="summary-insight" id="addSummaryInsight"></p>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <h2>Addendum distribution – <span id="addDetailMonthLabel"></span> <span id="addDetailYearLabel"></span></h2>
+              <canvas id="addMonthChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+              <h2>Letting Week % – year vs year comparison</h2>
+              <canvas id="addCompareChart"></canvas>
+            </div>
+          </div>
+        </div>
+  
         <!-- IN-STATE VS OUT-STATE SECTION -->
         <div id="section-inst-out" class="page-section">
           <!-- High-level cards for selected year -->

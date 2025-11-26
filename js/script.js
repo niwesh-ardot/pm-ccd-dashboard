@@ -11,13 +11,18 @@ let trendChart = null;    // year vs year beforePct chart
 // extra roadway charts
 let totalProjectsChart = null;
 let filesByYearPctChart = null;
-let filesYearChart = null;          // “Files from Roadway – selected year”
-let planTimelineYearChart = null;   // “Plan Receipt Timeline – selected year”
+let filesYearChart = null;          // "Files from Roadway – selected year"
+let planTimelineYearChart = null;   // "Plan Receipt Timeline – selected year"
 
 // In-state vs Out-state data and charts
 let instOutData = [];
 let instOutBarChart = null;
 let instOutLineChart = null;
+
+// Addendum data and charts
+let addendumData = [];
+let addMonthChart = null;            // distribution for selected month
+let addCompareChart = null;          // Letting Week % year vs year
 
 /* ---------- CSV helper: split one line while respecting quotes ---------- */
 function splitCSVLine(line) {
@@ -45,14 +50,16 @@ function splitCSVLine(line) {
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
 
-  // Load BOTH CSV files
+  // Load ALL THREE CSV files
   Promise.all([
     fetch("data/roadway_files.csv").then(resp => resp.text()),
-    fetch("data/InStateVsOutState.csv").then(resp => resp.text())
+    fetch("data/InStateVsOutState.csv").then(resp => resp.text()),
+    fetch("data/Addendum_data.csv").then(resp => resp.text())
   ])
-    .then(([roadwayText, instOutText]) => {
+    .then(([roadwayText, instOutText, addendumText]) => {
       roadwayData = parseRoadwayCSV(roadwayText);
       instOutData = parseInstOutCSV(instOutText);
+      addendumData = parseAddendumCSV(addendumText);
 
       if (!roadwayData.length) {
         console.error("No rows parsed from roadway CSV. Check file path / header row.");
@@ -64,6 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("No rows parsed from InStateVsOutState CSV. Check file path / header row.");
       } else {
         setupInstOutDashboard();
+      }
+
+      if (!addendumData.length) {
+        console.error("No rows parsed from Addendum CSV. Check file path / header row.");
+      } else {
+        setupAddendumDashboard();
       }
     })
     .catch(err => {
@@ -249,7 +262,81 @@ function parseInstOutCSV(text) {
   return data;
 }
 
-/* ========== ROADWAY DASHBOARD SETUP ========== */
+/* ========== CSV PARSING: ADDENDUM DATA ========== */
+
+function parseAddendumCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+
+  const headers = splitCSVLine(lines[0]);
+  const data = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+
+    const parts = splitCSVLine(line);
+    const row = {};
+
+    headers.forEach((h, idx) => {
+      const raw = parts[idx] ?? "";
+      const value = raw.trim();
+
+      switch (h) {
+        case "Year":
+          row.year = value ? Number(value) : null;
+          break;
+        case "Month":
+          row.month = value;
+          break;
+        case "Advertisement":
+          row.advertisement = value ? Number(value) : 0;
+          break;
+        case "3 Weeks Before":
+          row.threeWeeksBefore = value ? Number(value) : 0;
+          break;
+        case "2 Weeks Before":
+          row.twoWeeksBefore = value ? Number(value) : 0;
+          break;
+        case "1 Week Before":
+          row.oneWeekBefore = value ? Number(value) : 0;
+          break;
+        case "Letting Week":
+          row.lettingWeek = value ? Number(value) : 0;
+          break;
+        case "Total":
+          row.total = value ? Number(value) : 0;
+          break;
+        case "Advertisement %":
+          row.advertisementPct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        case "3 Weeks Before %":
+          row.threeWeeksBeforePct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        case "2 Weeks Before %":
+          row.twoWeeksBeforePct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        case "1 Week Before %":
+          row.oneWeekBeforePct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        case "Letting Week %":
+          row.lettingWeekPct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        case "Total %":
+          row.totalPct = value ? parseFloat(value.replace("%", "")) : 0;
+          break;
+        default:
+          break;
+      }
+    });
+
+    if (row.year && row.month && row.total > 0) {
+      data.push(row);
+    }
+  }
+
+  return data;
+}
 
 function setupRoadwayDashboard() {
   if (!roadwayData.length) return;
@@ -960,4 +1047,279 @@ function buildInstOutCharts() {
   }
 }
 
-/* ========== END OF FILE ========== */
+/* ========== ADDENDUM DASHBOARD SETUP ========== */
+
+function setupAddendumDashboard() {
+  if (!addendumData.length) return;
+
+  const addYearSelect = document.getElementById("addYearSelect");
+  const addMonthSelect = document.getElementById("addMonthSelect");
+  const addCompareYearSelect = document.getElementById("addCompareYearSelect");
+
+  const years = [...new Set(addendumData.map(d => d.year))].sort((a, b) => a - b);
+
+  populateSelect(addYearSelect, years);
+  populateSelect(addCompareYearSelect, years);
+  populateSelect(addMonthSelect, MONTHS);
+
+  addYearSelect.value = years[years.length - 1];  // latest year
+  addCompareYearSelect.value = years[0];          // earliest year
+  addMonthSelect.value = "January";
+
+  updateAddendumGlobalCards();
+  updateAddendumView();
+  updateAddendumCompareChart();
+  
+  addYearSelect.addEventListener("change", () => {
+    updateAddendumView();
+    updateAddendumCompareChart();
+  });
+
+  addMonthSelect.addEventListener("change", () => {
+    updateAddendumView();
+  });
+
+  addCompareYearSelect.addEventListener("change", () => {
+    updateAddendumCompareChart();
+  });
+}
+
+/* ========== ADDENDUM GLOBAL CARDS ========== */
+
+function updateAddendumGlobalCards() {
+  const cardTotalAddenda = document.getElementById("addCardTotalAddenda");
+  const cardAvgEarlyPct = document.getElementById("addCardAvgEarlyPct");
+  const cardBestYear = document.getElementById("addCardBestYear");
+  const cardWorstYear = document.getElementById("addCardWorstYear");
+
+  const totalAddenda = addendumData.reduce((sum, d) => sum + (d.total || 0), 0);
+
+  const byYear = {};
+  addendumData.forEach(d => {
+    if (!byYear[d.year]) {
+      byYear[d.year] = { earlyPct: 0, count: 0, lateWeekPct: 0 };
+    }
+    // Early = Advertisement + 3 Weeks Before + 2 Weeks Before
+    const earlyTotal = (d.advertisementPct || 0) + (d.threeWeeksBeforePct || 0) + (d.twoWeeksBeforePct || 0);
+    byYear[d.year].earlyPct += earlyTotal;
+    byYear[d.year].count += 1;
+    // Late week = 1 Week Before + Letting Week
+    const lateWeek = (d.oneWeekBeforePct || 0) + (d.lettingWeekPct || 0);
+    byYear[d.year].lateWeekPct += lateWeek;
+  });
+
+  const yearList = Object.keys(byYear).map(Number);
+  let sumAvgEarlyPct = 0;
+  let nYears = 0;
+  let bestYear = null;
+  let bestVal = -Infinity;
+  let worstYear = null;
+  let worstVal = Infinity;
+
+  yearList.forEach(y => {
+    const info = byYear[y];
+    if (!info.count) return;
+    const avgEarly = info.earlyPct / info.count;
+    const avgLateWeek = info.lateWeekPct / info.count;
+
+    sumAvgEarlyPct += avgEarly;
+    nYears += 1;
+
+    if (avgEarly > bestVal) {
+      bestVal = avgEarly;
+      bestYear = y;
+    }
+    if (avgLateWeek < worstVal) {
+      worstVal = avgLateWeek;
+      worstYear = y;
+    }
+  });
+
+  const overallAvgEarly = nYears ? sumAvgEarlyPct / nYears : null;
+
+  cardTotalAddenda.textContent = totalAddenda.toString();
+  cardAvgEarlyPct.textContent = overallAvgEarly != null ? `${overallAvgEarly.toFixed(1)}%` : "–";
+  cardBestYear.textContent = bestYear != null ? `${bestYear} (${bestVal.toFixed(1)}%)` : "–";
+  cardWorstYear.textContent = worstYear != null ? `${worstYear} (${worstVal.toFixed(1)}% early)` : "–";
+}
+
+/* ========== ADDENDUM SELECTED MONTH VIEW ========== */
+
+function updateAddendumView() {
+  const addYearSelect = document.getElementById("addYearSelect");
+  const addMonthSelect = document.getElementById("addMonthSelect");
+  
+  const summaryTotal = document.getElementById("addSummaryTotal");
+  const summaryEarlyPct = document.getElementById("addSummaryEarlyPct");
+  const summaryLatePct = document.getElementById("addSummaryLatePct");
+  const summaryInsight = document.getElementById("addSummaryInsight");
+  const detailMonthLabel = document.getElementById("addDetailMonthLabel");
+  const detailYearLabel = document.getElementById("addDetailYearLabel");
+
+  const year = Number(addYearSelect.value);
+  const month = addMonthSelect.value;
+
+  const record = addendumData.find(d => d.year === year && d.month === month);
+
+  if (!record) {
+    summaryTotal.textContent = "–";
+    summaryEarlyPct.textContent = "–";
+    summaryLatePct.textContent = "–";
+    summaryInsight.textContent = "No addendum data recorded for this month.";
+    summaryInsight.className = "summary-insight";
+    updateAddendumMonthChart(null);
+    return;
+  }
+
+  const earlyPct = (record.advertisementPct || 0) + (record.threeWeeksBeforePct || 0) + (record.twoWeeksBeforePct || 0);
+  const latePct = (record.oneWeekBeforePct || 0) + (record.lettingWeekPct || 0);
+
+  summaryTotal.textContent = record.total?.toString() ?? "0";
+  summaryEarlyPct.textContent = `${earlyPct.toFixed(1)}%`;
+  summaryLatePct.textContent = `${latePct.toFixed(1)}%`;
+
+  detailMonthLabel.textContent = month;
+  detailYearLabel.textContent = year;
+
+  let insight = "";
+  let cls = "summary-insight";
+  if (earlyPct >= 70) {
+    insight = "Most addenda were issued well ahead of letting. This shows strong planning and preparation.";
+    cls += " good";
+  } else if (latePct >= 60) {
+    insight = "Most addenda are being issued in the final week. This creates last-minute pressure and risk.";
+    cls += " bad";
+  } else {
+    insight = "Addendum timing is distributed across the letting cycle. There is opportunity to push more issuances earlier.";
+  }
+  summaryInsight.textContent = insight;
+  summaryInsight.className = cls;
+
+  updateAddendumMonthChart(record);
+}
+
+/* ========== BAR CHART: ADDENDUM DISTRIBUTION FOR SELECTED MONTH ========== */
+
+function updateAddendumMonthChart(record) {
+  const ctx = document.getElementById("addMonthChart");
+  if (!ctx) return;
+
+  const labels = [
+    "Advertisement",
+    "3 Weeks Before",
+    "2 Weeks Before",
+    "1 Week Before",
+    "Letting Week"
+  ];
+
+  const data = record
+    ? [
+        record.advertisement || 0,
+        record.threeWeeksBefore || 0,
+        record.twoWeeksBefore || 0,
+        record.oneWeekBefore || 0,
+        record.lettingWeek || 0
+      ]
+    : [0, 0, 0, 0, 0];
+
+  if (addMonthChart) {
+    addMonthChart.data.datasets[0].data = data;
+    addMonthChart.update();
+    return;
+  }
+
+  addMonthChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Number of addenda",
+          data,
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+}
+
+/* ========== LINE CHART: ADDENDUM YEAR VS YEAR (LETTING WEEK %) ========== */
+
+function updateAddendumCompareChart() {
+  const addYearSelect = document.getElementById("addYearSelect");
+  const addCompareYearSelect = document.getElementById("addCompareYearSelect");
+  const ctx = document.getElementById("addCompareChart");
+  if (!ctx) return;
+
+  const year1 = Number(addYearSelect.value);
+  const year2 = Number(addCompareYearSelect.value);
+
+  // Get all months data for both years
+  const dataYear1LettingWeekPct = MONTHS.map(m => {
+    const rec = addendumData.find(d => d.year === year1 && d.month === m);
+    return rec ? rec.lettingWeekPct : null;
+  });
+
+  const dataYear2LettingWeekPct = MONTHS.map(m => {
+    const rec = addendumData.find(d => d.year === year2 && d.month === m);
+    return rec ? rec.lettingWeekPct : null;
+  });
+
+  if (addCompareChart) {
+    addCompareChart.data.labels = MONTHS;
+    addCompareChart.data.datasets[0].label = `${year1} – Letting Week %`;
+    addCompareChart.data.datasets[0].data = dataYear1LettingWeekPct;
+    addCompareChart.data.datasets[1].label = `${year2} – Letting Week %`;
+    addCompareChart.data.datasets[1].data = dataYear2LettingWeekPct;
+    addCompareChart.update();
+    return;
+  }
+
+  addCompareChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: MONTHS,
+      datasets: [
+        {
+          label: `${year1} – Letting Week %`,
+          data: dataYear1LettingWeekPct,
+          borderWidth: 2,
+          fill: false,
+          tension: 0.25,
+          spanGaps: true
+        },
+        {
+          label: `${year2} – Letting Week %`,
+          data: dataYear2LettingWeekPct,
+          borderWidth: 2,
+          fill: false,
+          tension: 0.25,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "bottom" }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: "% of addenda issued in Letting Week" }
+        }
+      }
+    }
+  });
+}
