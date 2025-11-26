@@ -936,17 +936,20 @@ function updateInstOutCardsAndSummary() {
 
   const compText =
     rec.withInCount > 0
-      ? `On ${rec.withInCount} contracts with at least one in-state bidder, ARDOT saved ${formatCurrency(rec.withInSavings)} compared with higher bids. `
+      ? `On ${rec.withInCount} contracts with at least one in-state bidder, ARDOT saved ${formatCurrency(rec.withInSavings)} by awarding the contract to the low out-of-state bidder. `
       : "There were no contracts with in-state bidders recorded this year. ";
 
+  // ⚠️ Here you want “worth $289,702,496”, not “saved …”.
+  // That means you need a field in your CSV that holds the TOTAL value
+  // of contracts with no in-state bidders, e.g. rec.noInAmount.
+  // Once you parse that column, use it here:
   const noInText =
     rec.noInCount > 0
-      ? `On ${rec.noInCount} contracts with no in-state bidders, ARDOT still saved ${formatCurrency(
-          rec.noInSavings
-        )} by awarding to the lowest out-of-state bidder.`
+      ? `Conversely, ARDOT awarded ${rec.noInCount} contracts worth ${formatCurrency(rec.noInAmount)} where there were no in-state bidders.`
       : "";
 
   insightEl.textContent = shareText + " " + compText + noInText;
+
 }
 
 /* ========== IN-STATE VS OUT-STATE: CHARTS ========== */
@@ -1085,12 +1088,11 @@ function setupAddendumDashboard() {
 }
 
 /* ========== ADDENDUM GLOBAL CARDS ========== */
-
 function updateAddendumGlobalCards() {
-  const cardTotalAddenda = document.getElementById("addCardTotalAddenda");
-  const cardAvgEarlyPct = document.getElementById("addCardAvgEarlyPct");
-  // const cardBestYear = document.getElementById("addCardBestYear");
-  // const cardWorstYear = document.getElementById("addCardWorstYear");
+  const cardTotalAddenda   = document.getElementById("addCardTotalAddenda");
+  const cardAvgEarlyPct    = document.getElementById("addCardAvgEarlyPct");
+  const addCardBestYear    = document.getElementById("addCardBestYear");
+  const addCardWorstYear   = document.getElementById("addCardWorstYear");
 
   const totalAddenda = addendumData.reduce((sum, d) => sum + (d.total || 0), 0);
 
@@ -1099,11 +1101,14 @@ function updateAddendumGlobalCards() {
     if (!byYear[d.year]) {
       byYear[d.year] = { earlyPct: 0, count: 0, lateWeekPct: 0 };
     }
-    // Early = Advertisement + 3 Weeks Before + 2 Weeks Before
-    const earlyTotal = (d.advertisementPct || 0) + (d.threeWeeksBeforePct || 0) + (d.twoWeeksBeforePct || 0);
+    const earlyTotal =
+      (d.advertisementPct || 0) +
+      (d.threeWeeksBeforePct || 0) +
+      (d.twoWeeksBeforePct || 0);
+
     byYear[d.year].earlyPct += earlyTotal;
     byYear[d.year].count += 1;
-    // Late week = 1 Week Before + Letting Week
+
     const lateWeek = (d.oneWeekBeforePct || 0) + (d.lettingWeekPct || 0);
     byYear[d.year].lateWeekPct += lateWeek;
   });
@@ -1119,7 +1124,8 @@ function updateAddendumGlobalCards() {
   yearList.forEach(y => {
     const info = byYear[y];
     if (!info.count) return;
-    const avgEarly = info.earlyPct / info.count;
+
+    const avgEarly    = info.earlyPct / info.count;
     const avgLateWeek = info.lateWeekPct / info.count;
 
     sumAvgEarlyPct += avgEarly;
@@ -1129,6 +1135,7 @@ function updateAddendumGlobalCards() {
       bestVal = avgEarly;
       bestYear = y;
     }
+
     if (avgLateWeek < worstVal) {
       worstVal = avgLateWeek;
       worstYear = y;
@@ -1138,10 +1145,21 @@ function updateAddendumGlobalCards() {
   const overallAvgEarly = nYears ? sumAvgEarlyPct / nYears : null;
 
   cardTotalAddenda.textContent = totalAddenda.toString();
-  cardAvgEarlyPct.textContent = overallAvgEarly != null ? `${overallAvgEarly.toFixed(1)}%` : "–";
-  cardBestYear.textContent = bestYear != null ? `${bestYear} (${bestVal.toFixed(1)}%)` : "–";
-  cardWorstYear.textContent = worstYear != null ? `${worstYear} (${worstVal.toFixed(1)}% early)` : "–";
+  cardAvgEarlyPct.textContent =
+    overallAvgEarly != null ? `${overallAvgEarly.toFixed(1)}%` : "–";
+
+  // ✅ Now we update only the ADDENDUM cards
+  if (addCardBestYear) {
+    addCardBestYear.textContent =
+      bestYear != null ? `${bestYear} (${bestVal.toFixed(1)}%)` : "–";
+  }
+
+  if (addCardWorstYear) {
+    addCardWorstYear.textContent =
+      worstYear != null ? `${worstYear} (${worstVal.toFixed(1)}% early)` : "–";
+  }
 }
+
 
 /* ========== ADDENDUM SELECTED MONTH VIEW ========== */
 
