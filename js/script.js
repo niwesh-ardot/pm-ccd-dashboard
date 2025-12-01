@@ -958,7 +958,7 @@ function updateInstOutCardsAndSummary() {
 
   const noInText =
     rec.noInCount > 0
-      ? ` On ${rec.noInCount} contracts with no in-state bidders, ARDOT saved ${formatCurrency(noInSavings)} by awarding the contract to the low out-of-state bidder.`
+      ? ` Additionally, there were ${rec.noInCount} contracts totalling ${formatCurrency(noInSavings)} with no in-state bidders.`
       : "";
 
   insightEl.textContent = shareText + compText + noInText;
