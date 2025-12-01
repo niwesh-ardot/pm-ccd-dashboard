@@ -899,38 +899,53 @@ function updateInstOutCardsAndSummary() {
   const year = Number(instYearSelect.value);
 
   const rec = instOutData.find(d => d.year === year);
-  const totalContractsEl = document.getElementById("instCardTotalContracts");
-  const inShareAmountEl = document.getElementById("instCardInShareAmount");
-  const savingsEl = document.getElementById("instCardSavings");
-  const inShareCountEl = document.getElementById("instCardInShareCount");
-  const withInCountEl = document.getElementById("instCardWithInCount");
-  const headlineEl = document.getElementById("instSummaryHeadline");
-  const insightEl = document.getElementById("instSummaryInsight");
+
+  const totalContractsEl   = document.getElementById("instCardTotalContracts");
+  const inShareAmountEl    = document.getElementById("instCardInShareAmount");
+  const withInSavingsEl    = document.getElementById("instCardWithInSavings");
+  const noInSavingsEl      = document.getElementById("instCardNoInSavings");
+  const inShareCountEl     = document.getElementById("instCardInShareCount");
+  const withInCountEl      = document.getElementById("instCardWithInCount");
+  const headlineEl         = document.getElementById("instSummaryHeadline");
+  const insightEl          = document.getElementById("instSummaryInsight");
 
   if (!rec) {
     totalContractsEl.textContent = "–";
-    inShareAmountEl.textContent = "–";
-    savingsEl.textContent = "–";
-    inShareCountEl.textContent = "–";
-    withInCountEl.textContent = "–";
-    headlineEl.textContent = "No data for this year.";
-    insightEl.textContent = "";
+    inShareAmountEl.textContent  = "–";
+    withInSavingsEl.textContent  = "–";
+    noInSavingsEl.textContent    = "–";
+    inShareCountEl.textContent   = "–";
+    withInCountEl.textContent    = "–";
+    headlineEl.textContent       = "No data for this year.";
+    insightEl.textContent        = "";
     return;
   }
 
-  const inShareAmount = rec.totalAmount ? (rec.amountIn / rec.totalAmount) * 100 : 0;
-  const inShareCount = rec.totalContracts ? (rec.countIn / rec.totalContracts) * 100 : 0;
-  const totalSavings = (rec.withInSavings || 0) + (rec.noInSavings || 0);
+  const inShareAmount = rec.totalAmount
+    ? (rec.amountIn / rec.totalAmount) * 100
+    : 0;
 
+  const inShareCount = rec.totalContracts
+    ? (rec.countIn / rec.totalContracts) * 100
+    : 0;
+
+  const withInSavings = rec.withInSavings || 0;
+  const noInSavings   = rec.noInSavings   || 0;
+
+  // Top cards
   totalContractsEl.textContent = rec.totalContracts.toString();
-  inShareAmountEl.textContent = formatPercent(inShareAmount);
-  savingsEl.textContent = formatCurrency(totalSavings);
-  inShareCountEl.textContent = formatPercent(inShareCount);
-  withInCountEl.textContent = rec.withInCount.toString();
+  inShareAmountEl.textContent  = formatPercent(inShareAmount);
+  withInSavingsEl.textContent  = formatCurrency(withInSavings);
+  noInSavingsEl.textContent    = formatCurrency(noInSavings);
+  inShareCountEl.textContent   = formatPercent(inShareCount);
+  withInCountEl.textContent    = rec.withInCount.toString();
 
-  // Headline + narrative for management
-  headlineEl.textContent = `${year}: ${formatPercent(inShareAmount)} of contract VALUE and ${formatPercent(inShareCount)} of contract COUNT went to in-state contractors.`;
+  // Headline
+  headlineEl.textContent =
+    `${year}: ${formatPercent(inShareAmount)} of contract VALUE and ` +
+    `${formatPercent(inShareCount)} of contract COUNT went to in-state contractors.`;
 
+  // Narrative / insight
   const shareText =
     inShareAmount < 50
       ? "More than half of contract dollars are still leaving the state. This may indicate an opportunity to grow in-state contractor capacity."
@@ -938,21 +953,17 @@ function updateInstOutCardsAndSummary() {
 
   const compText =
     rec.withInCount > 0
-      ? `On ${rec.withInCount} contracts with at least one in-state bidder, ARDOT saved ${formatCurrency(rec.withInSavings)} by awarding the contract to the low out-of-state bidder. `
-      : "There were no contracts with in-state bidders recorded this year. ";
+      ? ` On ${rec.withInCount} contracts with at least one in-state bidder, ARDOT saved ${formatCurrency(withInSavings)} by awarding the contract to the low out-of-state bidder.`
+      : " There were no contracts with in-state bidders recorded this year.";
 
-  // ⚠️ Here you want “worth $289,702,496”, not “saved …”.
-  // That means you need a field in your CSV that holds the TOTAL value
-  // of contracts with no in-state bidders, e.g. rec.noInAmount.
-  // Once you parse that column, use it here:
   const noInText =
     rec.noInCount > 0
-      ? `Conversely, ARDOT awarded ${rec.noInCount} contracts worth ${formatCurrency(rec.noInAmount)} where there were no in-state bidders.`
+      ? ` On ${rec.noInCount} contracts with no in-state bidders, ARDOT saved ${formatCurrency(noInSavings)} by awarding the contract to the low out-of-state bidder.`
       : "";
 
-  insightEl.textContent = shareText + " " + compText + noInText;
-
+  insightEl.textContent = shareText + compText + noInText;
 }
+
 
 /* ========== IN-STATE VS OUT-STATE: CHARTS ========== */
 
