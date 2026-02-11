@@ -190,4 +190,5 @@ Year,Month,% Received Before Plan Due Date,% Received After Due Date,% Received 
 2025,September,0.00%,100.00%,0.00%,0.00%,6,0,0,0,0,6,6,1
 2025,October,,,,,,,,,,,0,1
 2025,November,0.00%,100.00%,0.00%,0.00%,29,0,0,0,2,27,29,1
-2025,December,,,,,,,,,,,,
+2025,December,,,,,,,,,,,0,1
+2026,January,9.52%,90.48%,0.00%,0.00%,22,0,2,0,8,12,22,1
